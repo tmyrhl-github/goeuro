@@ -41,7 +41,7 @@ public class GoEuroTest {
     private static void getLocationData(String location) {
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;
-        // remove any non letters and spaces from the input
+        // remove any non letters, special characters and spaces from the input
         location = location.replaceAll("[^a-zA-Z ]", "");
         try {
             URL url = new URL(ENDPOINT_URL + location);
@@ -94,9 +94,9 @@ public class GoEuroTest {
         }
     }
     
-	/*
-	 * Parse the JSON input and create the CSV file.
-	 */
+   /*
+    * Parse the JSON input and create the CSV file.
+    */
     private static void getLocationDataFromJson(String locationJsonStr, String location) {
         final String JSON_POSITION = "geo_position";
         final String JSON_LATITUDE = "latitude";
@@ -111,25 +111,32 @@ public class GoEuroTest {
          	JSONArray jsonArray = new JSONArray(locationJsonStr);
          	
          	if(jsonArray == null || jsonArray.length() == 0) {
-               	System.out.println("No data found for location \"" + location + "\"");
+            	System.out.println("No data found for location \"" + location + "\"");
                 return;
          	}
         	
 	        int count = jsonArray.length(); 
-			for(int i=0 ; i<count; i++){   
-				JSONObject jsonObject = jsonArray.getJSONObject(i);  
-				long id = jsonObject.getLong(JSON_ID);
-				String name = jsonObject.getString(JSON_NAME);
-				String type = jsonObject.getString(JSON_TYPE);
-		        JSONObject pos = jsonObject.getJSONObject(JSON_POSITION);
-		        double latitude = pos.getDouble(JSON_LATITUDE);
-		        double longitude = pos.getDouble(JSON_LONGITUDE);
-		        String csvStr = new String(id + ",\"" + name + "\",\"" + type +  
-		        		"\"," + latitude +  "," + longitude);
-		        csvArray.add(csvStr);
+			for(int i=0 ; i<count; i++){ 
+				try {
+					JSONObject jsonObject = jsonArray.getJSONObject(i);  
+					long id = jsonObject.getLong(JSON_ID);
+					String name = jsonObject.getString(JSON_NAME);
+					String type = jsonObject.getString(JSON_TYPE);
+			        JSONObject pos = jsonObject.getJSONObject(JSON_POSITION);
+			        double latitude = pos.getDouble(JSON_LATITUDE);
+			        double longitude = pos.getDouble(JSON_LONGITUDE);
+			        String csvStr = new String(id + ",\"" + name + "\",\"" + type +  
+			        	"\"," + latitude +  "," + longitude);
+			        csvArray.add(csvStr);
+				}
+				catch (JSONException e) {
+					System.err.println("Error parsing JSON array " + e);        
+				}
 			}
 			// write the CSV data to file
-			writeToFile(csvArray, location);
+			if (csvArray.size() > 0) {
+				writeToFile(csvArray, location);
+			}
         } 
         catch (JSONException e) {
         	System.err.println("Error parsing JSON " + e);        
@@ -169,10 +176,8 @@ public class GoEuroTest {
 	         	}
         	}
         	catch(IOException e) {
-            	System.err.println("Error closing output stream: " + e);    
+            		System.err.println("Error closing output stream: " + e);    
         	}
         }
     }
 }
-
-
